@@ -81,4 +81,7 @@ Esto abrirá una nueva pestaña en tu navegador con la interfaz de la aplicació
 
 ---
 
+## Dataset
+[text](https://people.csail.mit.edu/talidekel/RBNR.html)
+
 Si tienes alguna pregunta o sugerencia, no dudes en contactarme. ¡Gracias por usar esta aplicación de detección de dorsales!
