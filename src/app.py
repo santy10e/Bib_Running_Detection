@@ -7,7 +7,7 @@ from utils import get_true_annot, get_rbns, annotate
 from functions import run_all_tests, validate_accuracy
 
 # Función para cargar los estilos CSS
-
+#NO FUNCIONA LOS ESTILOS CSS [POr actualizar]
 
 def load_css(file_name):
     with open(file_name, "r") as f:
