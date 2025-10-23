@@ -14,7 +14,7 @@ Este proyecto utiliza Streamlit y OpenCV para detectar dorsales de corredores en
 1. Clona este repositorio:
 
     ```bash
-    git clone https://github.com/tu_usuario/deteccion_dorsales.git
+    git clone https://github.com/santy10e/Bib_Running_Detection
     cd deteccion_dorsales
     ```
 
