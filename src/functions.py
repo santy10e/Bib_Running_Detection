@@ -6,24 +6,27 @@ import pandas as pd
 
 # Importar funciones del archivo src.utils
 from utils import get_true_annot, get_rbns, annotate
+from core import config
 
 # Configuración de detección de dorsales
-bd_configPath = '/content/bib-project/RBNR/custom-yolov4-tiny-detector.cfg'
-bd_weightsPath = '/content/bib-project/RBNR/custom-yolov4-tiny-detector_best.weights'
-bd_classes = ['bib']
+# (rutas resueltas desde la raíz del proyecto; antes eran absolutas '/content/...'
+#  y no se encontraban al ejecutar en local)
+bd_configPath = str(config.BD_CONFIG_PATH)
+bd_weightsPath = str(config.BD_WEIGHTS_PATH)
+bd_classes = config.BD_CLASSES
 
 # Configuración de detección de números
-nr_configPath = '/content/bib-project/SVHN/custom-yolov4-tiny-detector.cfg'
-nr_weightsPath = '/content/bib-project/SVHN/custom-yolov4-tiny-detector_best.weights'
-nr_classes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+nr_configPath = str(config.NR_CONFIG_PATH)
+nr_weightsPath = str(config.NR_WEIGHTS_PATH)
+nr_classes = config.NR_CLASSES
 
 # Colores para anotaciones
 true_color = [66, 245, 108]
 color = [66, 245, 108]
 
-# Rutas de entrada y salida
-images_path = '/usr/validation/test/'
-output_path = '/usr/validation/Full/'
+# Rutas de entrada y salida (deben terminar en separador: utils concatena rutas)
+images_path = str(config.VALIDATION_DIR) + os.sep
+output_path = str(config.EVAL_OUTPUT_DIR) + os.sep
 
 
 def check_existing_files():
@@ -34,14 +37,23 @@ def check_existing_files():
             os.remove(file_path)
 
 
-def run_all_tests():
+def list_test_images():
+    # Lista de imágenes en el directorio de entrada
+    return [file for file in os.listdir(images_path) if file.endswith('.JPG')]
+
+
+def run_all_tests(progress_callback=None):
+    """Ejecuta el modelo sobre el dataset de validación.
+
+    progress_callback (opcional): función (índice, total, nombre_imagen) que se
+    invoca tras procesar cada imagen. No altera el cálculo.
+    """
+    os.makedirs(output_path, exist_ok=True)
     check_existing_files()
 
-    # Lista de imágenes en el directorio de entrada
-    images = [file for file in os.listdir(
-        images_path) if file.endswith('.JPG')]
+    images = list_test_images()
 
-    for image in images:
+    for idx, image in enumerate(images):
         img = cv.imread(os.path.join(images_path, image))
 
         # Agregar anotaciones verdaderas
@@ -65,6 +77,9 @@ def run_all_tests():
             cv.imwrite(os.path.join(
                 output_path, f"{image[:-4]}_annot.JPG"), img)
 
+        if progress_callback is not None:
+            progress_callback(idx + 1, len(images), image)
+
 
 def validate_accuracy():
     true_df = pd.read_csv(os.path.join(output_path, 'bib_numbers.txt'), delimiter=',',
@@ -79,4 +94,3 @@ def validate_accuracy():
     total = len(true_df)
 
     return true_positives / total
-

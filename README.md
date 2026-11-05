@@ -1,87 +1,92 @@
-# Detección de Dorsales de Corredores
+# Bib Running Detection
 
-Este proyecto utiliza Streamlit y OpenCV para detectar dorsales de corredores en imágenes y videos. La aplicación permite cargar imágenes, videos y también usar la cámara web para realizar detecciones en tiempo real.
+**Computer Vision Platform** para detectar, reconocer y registrar los números de dorsal de corredores en imágenes, videos y cámaras en directo.
+
+Construida con **Streamlit** y **OpenCV**. Usa una cascada de dos redes **YOLOv4-tiny** (Darknet):
+
+1. **RBNR**: localiza el dorsal en la imagen.
+2. **SVHN**: reconoce los dígitos dentro del dorsal, que se ordenan de izquierda a derecha para formar el número.
 
 ## Requisitos
 
-- Python 3.x
-- Streamlit
-- OpenCV
-- Otros paquetes necesarios listados en `requirements.txt`
+- Python 3.11
+- Dependencias en `requirements.txt` (Streamlit 1.34, OpenCV 4.9, …)
 
 ## Instalación
 
-1. Clona este repositorio:
+```bash
+git clone https://github.com/santy10e/Bib_Running_Detection
+cd Bib_Running_Detection
+python -m venv venv
+venv\Scripts\activate          # Windows  ·  source venv/bin/activate en Linux/macOS
+pip install -r requirements.txt
+```
 
-    ```bash
-    git clone https://github.com/santy10e/Bib_Running_Detection
-    cd deteccion_dorsales
-    ```
-
-2. Instala los requisitos:
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3. Asegúrate de tener los archivos de configuración y pesos de los modelos en las rutas correctas especificadas en el código.
-
-## Estructura del Proyecto
-
-- `app.py`: Archivo principal de la aplicación.
-- `utils.py`: Contiene las funciones auxiliares para anotación y obtención de resultados.
-- `functions.py`: Contiene las funciones para ejecutar pruebas y validar la precisión.
-- `assets/styles.css`: Archivo de estilos CSS para la aplicación.
-- `requirements.txt`: Lista de dependencias del proyecto.
+Los modelos (`.cfg` y `.weights`) ya están incluidos en `content/bib-project/`.
 
 ## Uso
 
-Para ejecutar la aplicación, usa el siguiente comando:
+Desde la raíz del proyecto:
 
 ```bash
-streamlit run app.py
+streamlit run src/app.py
 ```
 
-Esto abrirá una nueva pestaña en tu navegador con la interfaz de la aplicación.
+También funciona desde `src/` con `streamlit run app.py`: todas las rutas se resuelven a partir de la ubicación del proyecto.
 
-### Funcionalidades
+## Funcionalidades
 
-- **Inicio**: Permite cargar una imagen y ejecutar la detección de dorsales.
-- **Galería de Imágenes**: Muestra las imágenes guardadas y permite filtrar por fecha o número de dorsal.
-- **Actualizar Modelo**: Ejecuta pruebas y valida la precisión del modelo.
-- **Cámara Web**: Permite capturar video en tiempo real desde la cámara web y realizar detecciones.
-- **Cargar Video**: Permite cargar un video y ejecutar la detección de dorsales en cada fotograma.
+| Página | Qué hace |
+|---|---|
+| **Dashboard** | Imágenes analizadas, dorsales detectados, videos analizados y precisión de la última evaluación. Incluye accesos rápidos, últimas detecciones, actividad reciente y estado del modelo. Solo muestra datos reales. |
+| **Detección de imágenes** | Carga JPG/JPEG, ejecución de la detección y comparador original/detección (deslizador, lado a lado). Muestra cada dorsal con su número, la confianza del detector y su caja. Permite descargar la imagen procesada y la guarda en la galería. |
+| **Procesamiento de videos** | Carga MP4 y procesa fotograma a fotograma con progreso en vivo y botón para detener. Genera un video anotado reproducible y descargable, una tabla de detecciones por fotograma y un resumen de dorsales únicos con recortes. |
+| **Cámara en tiempo real** | Selector y búsqueda de cámaras, iniciar/detener, indicador LIVE y contador de dorsales de la sesión. Incluye un modo de captura desde el navegador (`st.camera_input`). |
+| **Galería de detecciones** | Tarjetas con miniatura, dorsal y fecha. Búsqueda por dorsal, filtro por día o rango de fechas, orden, paginación y vista ampliada con descarga. |
+| **Evaluación del modelo** | Ejecuta `run_all_tests()` sobre el dataset RBNR (217 imágenes). Muestra la exactitud oficial (`validate_accuracy()`) y precision, recall y F1 derivadas, el desglose TP/FP/FN, la comparación por subconjunto, los resultados por imagen y el historial. |
 
-### Cargar Imagen
+## Estructura
 
-1. Selecciona la pestaña "Inicio".
-2. Carga una imagen en formato JPG o JPEG.
-3. Haz clic en "Ejecutar detección" para detectar dorsales en la imagen cargada.
+```text
+src/
+├── app.py                  # Punto de entrada: tema, sidebar y enrutado
+├── utils.py                # Pipeline original (Detector, get_rbns, …)
+├── functions.py            # Evaluación original (run_all_tests, validate_accuracy)
+├── core/                   # Lógica sin UI
+│   ├── config.py           # Rutas, modelos, versión, colores
+│   ├── detection.py        # Modelos en caché, inferencia, dibujo de anotaciones
+│   ├── video.py            # Procesamiento de video y escritura del resultado
+│   └── storage.py          # Galería, registro de actividad, métricas de evaluación
+├── components/             # Sistema de diseño
+│   ├── ui.py               # Header, metric cards, badges, empty states, alertas…
+│   ├── sidebar.py          # Navegación persistente y estado del sistema
+│   ├── viewers.py          # Comparador antes/después y vista lado a lado
+│   └── icons.py            # Iconos Lucide (SVG) e isotipo
+└── views/                  # Una vista por página
+    ├── dashboard.py · image_detection.py · video_detection.py
+    └── webcam.py · gallery.py · model_evaluation.py
+assets/
+├── styles.css              # Design system (tokens + componentes br-*)
+└── images/favicon.png
+.streamlit/config.toml      # Tema oscuro base (copia en src/.streamlit)
+```
 
-### Ver Imágenes Guardadas
+Las vistas están en `views/` y no en `pages/` porque Streamlit convierte automáticamente una carpeta `pages/` en un menú propio.
 
-1. Selecciona la pestaña "Galería de Imágenes".
-2. Filtra las imágenes guardadas por fecha o número de dorsal.
+## Almacenamiento
 
-### Actualizar Modelo
+- **Galería**: `usr/validation/Full/{dorsal}_{dd-mm-yy_HH_MM_SS}.jpg`. Es el mismo formato de la versión anterior, así que las imágenes antiguas siguen apareciendo.
+- **Actividad**: `usr/activity_log.jsonl`, un evento por análisis real (imagen, video, sesión de cámara o evaluación). Alimenta el dashboard y el historial de evaluaciones.
+- **Evaluación**: `bib_numbers.txt`, `preds.txt` y `*_annot.JPG` en `usr/validation/Full/` (comportamiento original de `run_all_tests`).
 
-1. Selecciona la pestaña "Actualizar Modelo".
-2. Haz clic en "Ejecutar modelo" para correr todas las pruebas y validar la precisión del modelo.
+## Limitaciones conocidas
 
-### Usar Cámara Web
-
-1. Selecciona la pestaña "Cámara Web".
-2. Selecciona la cámara (integrada o externa) y haz clic en "Iniciar Camara".
-
-### Cargar Video
-
-1. Selecciona la pestaña "Cargar Video".
-2. Carga un video en formato MP4.
-3. La detección se realizará en cada fotograma del video cargado.
-
----
+- La **cámara en vivo** se abre en el equipo donde corre el servidor (OpenCV). Si la app se despliega en un servidor remoto, usa la pestaña "Captura desde el navegador".
+- Durante el procesamiento de un video o la cámara en vivo, cualquier interacción con otro control reinicia la ejecución de Streamlit. El video conserva los resultados parciales.
+- La **evaluación** dibuja las cajas reales sobre la imagen antes de predecir (lógica original de `functions.py`), lo que puede influir en el detector. Las métricas se marcan como experimentales.
+- No hay **matriz de confusión**: el proyecto no guarda la verdad por dígito, y los números de dorsal tienen cientos de clases posibles.
+- La confianza mostrada es la del **detector de dorsales**. El reconocedor de dígitos no expone una confianza por número.
 
 ## Dataset
-[Dataset de los bib números de los corredores](https://people.csail.mit.edu/talidekel/RBNR.html)
 
-Si tienes alguna pregunta o sugerencia, no dudes en contactarme. ¡Gracias por usar esta aplicación de detección de dorsales!
+[RBNR: Racing Bib Number Recognition](https://people.csail.mit.edu/talidekel/RBNR.html)

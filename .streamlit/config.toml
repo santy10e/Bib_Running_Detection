@@ -1,0 +1,19 @@
+# Tema de Bib Running Detection (Modern Sports Analytics · dark)
+# Se mantiene una copia en src/.streamlit/ para ejecutar también desde src/.
+[theme]
+base = "dark"
+primaryColor = "#C7FF3D"
+backgroundColor = "#0B0F14"
+secondaryBackgroundColor = "#18212B"
+textColor = "#F5F7FA"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"
+showSidebarNavigation = false
+
+[server]
+maxUploadSize = 500
+
+[browser]
+gatherUsageStats = false

@@ -1,0 +1,10 @@
+# Entorno y cachés
+venv/
+.venv/
+__pycache__/
+
+# Artefactos generados al usar la aplicación
+usr/activity_log.jsonl
+usr/validation/Full/*_annot.JPG
+usr/validation/Full/bib_numbers.txt
+usr/validation/Full/preds.txt

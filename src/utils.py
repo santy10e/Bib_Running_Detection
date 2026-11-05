@@ -671,8 +671,37 @@ def get_rbns(img, bd_configPath, bd_weightsPath,bd_classes,nr_configPath,nr_weig
     bd = Detector(bd_configPath, bd_weightsPath, bd_classes)
     nr = Detector(nr_configPath, nr_weightsPath, nr_classes)
 
+    detections = get_rbns_detailed(img, bd, nr, single=single)
+    if detections is None:
+        return None
+    return [[rbn, box] for rbn, box, _conf in detections]
+
+
+# Confidence thresholds used by the detection cascade
+BIB_CONF_THRESHOLD = 0.25
+DIGIT_CONF_THRESHOLD = 0.5
+
+
+def get_rbns_detailed(img, bd, nr, single=False):
+    """
+    Same pipeline as get_rbns, but using already-instantiated detectors
+    (so the networks are not reloaded on every call) and also returning the
+    confidence reported by the bib detector for each bib.
+
+    Args
+        img (numpy array): image array given by openCV .imread
+        bd (Detector): bib detector
+        nr (Detector): digit (number) detector
+        single (bool): if true, return only the bib with the largest area
+
+    Returns
+        List in the format [<bib number>, [x, y, width, height], <bib confidence>]
+        or None when no bib is detected
+    """
+
     # Make bib location predictions
-    bib_detections = bd.detect(img, 0.25)
+    bib_detections = bd.detect(img, BIB_CONF_THRESHOLD)
+    bib_confidences = list(bd.confidences)
 
 
     if len(bib_detections) > 0:
@@ -681,9 +710,9 @@ def get_rbns(img, bd_configPath, bd_weightsPath,bd_classes,nr_configPath,nr_weig
             (x, y, w, h) = obj[1]
             obj.append(w * h)
             crop_img = img[y:y+h, x:x+w]
-            
+
             # detect numbers on bib
-            num_detections = nr.detect(crop_img, 0.5)
+            num_detections = nr.detect(crop_img, DIGIT_CONF_THRESHOLD)
             bib_digit_loc = []
             if len(num_detections) > 0:
                 # get digits and locations
@@ -698,14 +727,18 @@ def get_rbns(img, bd_configPath, bd_weightsPath,bd_classes,nr_configPath,nr_weig
             else:
                 obj.append(0) # bib detection but no digit detection
 
-        if single: 
+        # keep the bib detector confidence next to each detection
+        for obj, conf in zip(bib_detections, bib_confidences):
+            obj.append(conf)
+
+        if single:
             if len(bib_detections) > 1:
                 bib_detections.sort(key=lambda x: x[2], reverse=True)
-            return [[bib_detections[0][3], bib_detections[0][1]]]
+            return [[bib_detections[0][3], bib_detections[0][1], bib_detections[0][4]]]
         else:
             final_bibs = []
             for bib in bib_detections:
-                final_bibs.append([bib[3], bib[1]])
+                final_bibs.append([bib[3], bib[1], bib[4]])
             return final_bibs
     else: return None
 
